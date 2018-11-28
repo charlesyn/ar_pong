@@ -69,6 +69,13 @@ if __name__ == "__main__":
             frame, paddle_point = ff.getFingertips(original, cnt)
             pong.set_cx(paddle_point[0])
             pong.set_cy(paddle_point[1])
+            
+            moment = cv2.moments(cnt)
+            if moment['m00'] != 0:
+                cx = int(moment['m10'] / moment['m00'])
+                cy = int(moment['m01'] / moment['m00'])
+                cv2.circle(original, (cx, cy), 5, [255, 0, 0], -1)
+
 
             cv2.drawContours(frame, biggest_contour, -1, (0, 255, 0), 3)
 
