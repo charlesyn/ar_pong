@@ -55,17 +55,21 @@ if __name__ == "__main__":
 
                 # get the reference to the webcam
     camera = cv2.VideoCapture(0)
+    (grabbed, frame) = camera.read()
+    (height, width) = frame.shape[:2]
 
-                # region of interest (ROI) coordinates
-    top, right, bottom, left = 10, 350, 225, 590   
+    # region of interest (ROI) coordinates
+    top, right, bottom, left = 0, int(width/2),height,0   
     num_frames = 0
-
+    print(top)
+    print(right)
+    print(bottom)
     while(True):
                     # get the current frame
         (grabbed, frame) = camera.read()
 
                     # resize the frame
-        frame = imutils.resize(frame, width=700)
+        
 
                     # flip the frame so that it is not the mirror view
         frame = cv2.flip(frame, 1)
@@ -77,8 +81,9 @@ if __name__ == "__main__":
         (height, width) = frame.shape[:2]
 
                     # get the ROI
-        roi = frame[top:bottom, right:left]
-
+        print(frame)
+        roi = frame[top:bottom, left:right]
+        print(roi)
                     # convert the roi to grayscale and blur it
         gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (7, 7), 0)
