@@ -1,6 +1,15 @@
 import numpy as np
 import cv2
 import filter_frame
+
+def get_velocity_direction(prevIm, currIm, oldPoints):
+    newPoints, status, err = cv2.calcOpticalFlowPyrLK(prevIm, currIm, oldPoints, None)
+    x1, y1 = oldPoints[0].ravel()
+    x2, y2 = newPoints[0].ravel()
+    dist = np.linalg.norm(newPoints[0]-oldPoints[0])
+    deg = np.arctan((y2-y1)/(x2-x1))*180/np.pi
+    return dist, deg
+
 def getAngle(wrist, finger):
     r = wrist[0]-finger[0]
     c = wrist[1]-finger[1]
