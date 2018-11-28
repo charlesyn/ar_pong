@@ -45,6 +45,14 @@ if __name__ == "__main__":
             sorted_contours = np.array(sorted(contours, key=cv2.contourArea))
             biggest_contour = sorted_contours[-1:]
             cnt = sorted_contours[-1]
+            
+            moment = cv2.moments(cnt)
+
+            if moment['m00'] != 0:
+                cx = int(moment['m10'] / moment['m00'])
+                cy = int(moment['m01'] / moment['m00'])
+                cv2.circle(original, (cx, cy), 5, [255, 0, 0], -1)
+
             frame, paddle_point = ff.getFingertips(original, cnt)
 
             cv2.drawContours(frame, biggest_contour, -1, (0, 255, 0), 3)
