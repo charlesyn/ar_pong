@@ -40,13 +40,13 @@ if __name__ == "__main__":
 
         bg_sub = getMahalanobisImage(grayscale, mean, std, threshold).astype('uint8')
 
-        print(bg_sub.dtype)
         _, contours, _ = cv2.findContours(bg_sub, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         if len(contours) > 0:
             sorted_contours = np.array(sorted(contours, key=cv2.contourArea))
             biggest_contour = sorted_contours[-1:]
             cnt = sorted_contours[-1]
-            frame = ff.getFingertips(original, cnt)
+            frame, paddle_point = ff.getFingertips(original, cnt)
+
             cv2.drawContours(frame, biggest_contour, -1, (0, 255, 0), 3)
 
         cv2.imshow('bg_sub', bg_sub)

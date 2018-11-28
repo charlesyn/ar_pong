@@ -22,8 +22,9 @@ class FilterFrame:
         defects = cv2.convexityDefects(contour, hull)
 
         if defects is None:
-            return frame
+            return frame, (0, 0)
 
+        paddle_point = (0, 0)
         for i in range(defects.shape[0]):
             s,e,f,d = defects[i,0]
 
@@ -32,8 +33,11 @@ class FilterFrame:
             far = tuple(contour[f][0])
 
             frame = cv2.circle(frame,far,5,[0,0,255],-1)
+            if far[0] > paddle_point[0]:
+                paddle_point = far
 
-        return frame
+        frame = cv2.circle(frame, paddle_point, 5, [255, 0, 0], -1)
+        return frame, paddle_point
 
     def findAngle(self, a, b, c):
         vecAB = self.findDistance(a, b)
