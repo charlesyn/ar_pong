@@ -26,18 +26,12 @@ class FilterFrame:
 
         for i in range(defects.shape[0]):
             s,e,f,d = defects[i,0]
-            sPrev, ePrev, fPrev, dPrev = defects[i - 2, 0]
-            sNext, eNext, fNext, dNext = defects[(i + 2) % defects.shape[0], 0]
-            start = tuple(contour[s][0])
-            nextStart = tuple(contour[sNext][0])
-            prevStart = tuple(contour[sPrev][0])
-            if self.findAngle(start, nextStart, prevStart) > 0.6:
-                end = tuple(contour[e][0])
-                far = tuple(contour[f][0])
-                #x1, y1, x2, y2 = self.getPerpendicular(prevStart, nextStart, start)
 
-                #cv2.line(frame,(int(x1), int(y1)),(int(x2), int(y2)), [255,0,0],2)
-                frame = cv2.circle(frame,far,5,[0,0,255],-1)
+            start = tuple(contour[s][0])
+            end = tuple(contour[e][0])
+            far = tuple(contour[f][0])
+
+            frame = cv2.circle(frame,far,5,[0,0,255],-1)
 
         return frame
 
