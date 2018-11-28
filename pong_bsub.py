@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import filter_frame
+import game_board
 
 def getMahalanobisImage(input, mean, std, threshold):
     res = ((input - mean)**2) / (std**2)
@@ -10,12 +11,12 @@ if __name__ == "__main__":
     camera = cv2.VideoCapture(0)
 
     ret, frame = camera.read()
-    h, w = frame.shape[:2]
+    height, width = frame.shape[:2]
 
-    top, bottom, left, right = 0, h, 0, int(w / 2)
+    top, bottom, left, right = 0, height, 0, int(width / 2)
     set_background_period = 30
 
-    background_frames = np.empty([h, int(w / 2), set_background_period])
+    background_frames = np.empty([height, int(width / 2), set_background_period])
 
     for i in range(set_background_period):
         ret, frame = camera.read()
@@ -28,6 +29,13 @@ if __name__ == "__main__":
     std[std < 0.001] = 0.001
     threshold = 6
     ff = filter_frame.FilterFrame()
+    pong = game_board.Pong(
+        h=height,
+        w=width,
+        default_ball_dx=width//100,
+        default_ball_dy=width//100,
+        default_paddle_speed=height//100,
+        default_half_paddle_height=height//10)
 
     while True:
         ret, frame = camera.read()
@@ -45,21 +53,18 @@ if __name__ == "__main__":
             sorted_contours = np.array(sorted(contours, key=cv2.contourArea))
             biggest_contour = sorted_contours[-1:]
             cnt = sorted_contours[-1]
-            
-            moment = cv2.moments(cnt)
-
-            if moment['m00'] != 0:
-                cx = int(moment['m10'] / moment['m00'])
-                cy = int(moment['m01'] / moment['m00'])
-                cv2.circle(original, (cx, cy), 5, [255, 0, 0], -1)
-
             frame, paddle_point = ff.getFingertips(original, cnt)
+            pong.set_cx(paddle_point[0])
+            pong.set_cy(paddle_point[1])
 
             cv2.drawContours(frame, biggest_contour, -1, (0, 255, 0), 3)
 
+        ended = pong.update()
+        pong.draw(frame)
+
         cv2.imshow('bg_sub', bg_sub)
         cv2.imshow('frame', frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if cv2.waitKey(1) & 0xFF == ord('q') or ended:
             break
 
     camera.release()

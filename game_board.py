@@ -27,13 +27,11 @@ class Pong:
         }
         self.paddle1 = {
             'no': 1,
-            'cx': self.padding,
-            'cy': h // 2,
-            'dy': 0,
+            'cx': 0,
+            'cy': 0,
             'half_paddle_width': default_half_paddle_width,
             'half_paddle_height': default_half_paddle_height,
             'lives': default_paddle_lives,
-            'speed': default_paddle_speed * 5
         }
         self.paddle2 = {
             'no': 2,
@@ -92,7 +90,6 @@ class Pong:
         if self.paddle2.get('target', None):
             self.update_paddle_for_target(self.paddle2)
 
-        self.paddle1['cy'] = self.yfix(self.paddle1['cy'] + self.paddle1['dy'])
         self.paddle2['cy'] = self.yfix(self.paddle2['cy'] + self.paddle2['dy'])
 
         return self.ended
@@ -165,16 +162,11 @@ class Pong:
         p = (ball['cx'], ball['cy'])
         cv2.circle(frame, p, ball['r'], (255, 255, 255), thickness=-1)
 
-    def on_key(self, key):
-        if self.is_key(key, 'w'):
-            self.paddle1['dy'] = -self.paddle1['speed']
-        elif self.is_key(key, 's'):
-            self.paddle1['dy'] = self.paddle1['speed']
-        else:
-            self.paddle1['dy'] = 0
+    def set_cx(self, x):
+        self.paddle1['cx'] = x
 
-    def is_key(self, key, character):
-        return key & 0xFF == ord(character)
+    def set_cy(self, y):
+        self.paddle1['cy'] = y
 
 
 def main():
