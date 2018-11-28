@@ -1,6 +1,10 @@
 import numpy as np
 import cv2
 import filter_frame
+def getAngle(wrist, finger):
+    r = wrist[0]-finger[0]
+    c = wrist[1]-finger[1]
+    return -1*c, r
 
 def getMahalanobisImage(input, mean, std, threshold):
     res = ((input - mean)**2) / (std**2)
