@@ -10,8 +10,9 @@ class FilterFrame:
 
         disc = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
         dst = cv2.filter2D(dst, -1, disc, dst)
-        erode_kernel = np.ones((3,3),np.uint8)
         dilate_kernel = np.ones((5,5), np.uint8)
+        erode_kernel = np.ones((3,3),np.uint8)
+        dst = cv2.dilate(dst, dilate_kernel, iterations=1)
         dst = cv2.erode(dst, erode_kernel, iterations=1)
 
         return dst

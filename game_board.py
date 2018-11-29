@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 
-
 class Pong:
 
     padding = 50
@@ -23,7 +22,8 @@ class Pong:
             'cy': h // 2,
             'dx': default_ball_dx,
             'dy': default_ball_dy,
-            'r': 5
+            'r': 5,
+            'turn':2
         }
         self.paddle1 = {
             'no': 1,
@@ -51,7 +51,7 @@ class Pong:
         self.xmax = self.w - self.padding
         self.xmin = self.padding
 
-    def update(self):
+    def update(self, speed):
         """Update all positions and velocities."""
 
         # Check if ball needs to bounce vertically
@@ -61,19 +61,23 @@ class Pong:
 
         # Check if ball needs to bounce off of paddle. Updates lives accordingly
         bx = self.ball['cx']
-        if bx <= self.xmin + self.paddle1['half_paddle_width']:
+        if bx <= self.paddle1['cx'] + self.paddle1['half_paddle_width'] and bx >= self.paddle1['cx'] and self.ball['turn'] is 1:
             if not self.hit(self.ball, self.paddle1):
-                self.remove_player_life(self.paddle1)
-                self.reset()
                 return
-            self.ball['dx'] *= -1
+            self.ball['dx'] *= -(1 + speed)
+            self.ball['turn'] = 2
+            print(self.ball['dx'])
+        elif bx <= self.xmin:
+            self.remove_player_life(self.paddle1)
+            self.reset()
 
-        if bx >= self.xmax - self.paddle2['half_paddle_width']:
+        if bx >= self.xmax - self.paddle2['half_paddle_width'] and self.ball['turn'] is 2:
             if not self.hit(self.ball, self.paddle2):
                 self.remove_player_life(self.paddle2)
                 self.reset()
                 return
             self.ball['dx'] *= -1
+            self.ball['turn'] = 1
 
         # Move balls and paddles
         self.ball['cx'] += self.ball['dx']
@@ -114,7 +118,11 @@ class Pong:
         """Reset the ball."""
         self.ball['cx'] = self.w // 2
         self.ball['cy'] = self.h // 2
-        self.ball['dx'] *= -1
+        self.ball['dx'] *= -1 / self.ball['dx']
+        if self.ball['dx'] < 0:
+            self.ball['turn'] = 1
+        else:
+            self.ball['turn'] = 2
 
     def end_game(self):
         """End the game"""
@@ -159,7 +167,7 @@ class Pong:
 
     def draw_ball(self, frame, ball):
         """In-place draw the ball onto the frame"""
-        p = (ball['cx'], ball['cy'])
+        p = (int(ball['cx']), int(ball['cy']))
         cv2.circle(frame, p, ball['r'], (255, 255, 255), thickness=-1)
 
     def set_cx(self, x):
@@ -167,7 +175,6 @@ class Pong:
 
     def set_cy(self, y):
         self.paddle1['cy'] = y
-
 
 def main():
     width = height = 600

@@ -2,11 +2,14 @@ import numpy as np
 import cv2
 import filter_frame
 import game_board
+import math
 
 def get_velocity_direction(prevIm, currIm, oldPoints):
     newPoints, status, err = cv2.calcOpticalFlowPyrLK(prevIm, currIm, oldPoints, None)
     x1, y1 = oldPoints[0].ravel()
     x2, y2 = newPoints[0].ravel()
+    if math.abs(x2 - x1) < 0.01:
+        x2 += 0.02
     dist = np.linalg.norm(newPoints[0]-oldPoints[0])
     deg = np.arctan((y2-y1)/(x2-x1))*180/np.pi
     return dist, deg
@@ -14,7 +17,10 @@ def get_velocity_direction(prevIm, currIm, oldPoints):
 def getAngle(wrist, finger):
     r = wrist[0]-finger[0]
     c = wrist[1]-finger[1]
-    return -1*c, r
+    return c, r
+
+def get_speed(first, second, width):
+    return abs(first[0] - second[0]) / (width * 0.1)
 
 def getMahalanobisImage(input, mean, std, threshold):
     res = ((input - mean)**2) / (std**2)
@@ -35,12 +41,13 @@ if __name__ == "__main__":
         ret, frame = camera.read()
         frame = cv2.flip(frame, 1)
         grayscale = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)[top:bottom, left:right]
+        grayscale = cv2.GaussianBlur(grayscale, (7,7), 0)
         background_frames[:,:,i] = grayscale
 
     mean = np.mean(background_frames, axis=2)
     std = np.std(background_frames, axis=2)
-    std[std < 0.001] = 0.001
-    threshold = 6
+    std[std < 0.00001] = 0.00001
+    threshold = 5
     ff = filter_frame.FilterFrame()
     pong = game_board.Pong(
         h=height,
@@ -49,7 +56,8 @@ if __name__ == "__main__":
         default_ball_dy=width//100,
         default_paddle_speed=height//100,
         default_half_paddle_height=height//10)
-
+    first = np.array([0, 0])
+    second = np.array([0, 0])
     while True:
         ret, frame = camera.read()
         frame = cv2.flip(frame, 1)
@@ -66,13 +74,20 @@ if __name__ == "__main__":
             sorted_contours = np.array(sorted(contours, key=cv2.contourArea))
             biggest_contour = sorted_contours[-1:]
             cnt = sorted_contours[-1]
+            moment = cv2.moments(cnt)
+            if moment['m00'] != 0:
+                cx = int(moment['m10'] / moment['m00'])
+                cy = int(moment['m01'] / moment['m00'])
+                cv2.circle(original, (cx, cy), 5, [255, 0, 0], -1)
             frame, paddle_point = ff.getFingertips(original, cnt)
             pong.set_cx(paddle_point[0])
             pong.set_cy(paddle_point[1])
-
+            first = second
+            second = paddle_point
             cv2.drawContours(frame, biggest_contour, -1, (0, 255, 0), 3)
 
-        ended = pong.update()
+        speed = get_speed(first, second, width)
+        ended = pong.update(speed)
         pong.draw(frame)
 
         cv2.imshow('bg_sub', bg_sub)
