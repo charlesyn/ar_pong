@@ -84,6 +84,11 @@ if __name__ == "__main__":
             pong.set_cy(paddle_point[1])
             first = second
             second = paddle_point
+            moment = cv2.moments(cnt)
+            if moment['m00'] != 0:
+                cx = int(moment['m10'] / moment['m00'])
+                cy = int(moment['m01'] / moment['m00'])
+                cv2.circle(original, (cx, cy), 5, [255, 0, 0], -1)
             cv2.drawContours(frame, biggest_contour, -1, (0, 255, 0), 3)
 
         speed = get_speed(first, second, width)
