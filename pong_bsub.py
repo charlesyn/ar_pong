@@ -20,11 +20,25 @@ def getAngle(wrist, finger):
     return c, r
 
 def get_speed(first, second, width):
-    return abs(first[0] - second[0]) / (width * 0.1)
+    return abs(first[0] - second[0]) / (width * 0.01)
 
-def getMahalanobisImage(input, mean, std, threshold):
-    res = ((input - mean)**2) / (std**2)
-    return cv2.threshold(res, threshold**2, 255, cv2.THRESH_BINARY)[1]
+def getMahalanobisImage(r,b,g, mean_r,mean_b,mean_g, std_r,std_b,std_g, threshold):
+    
+    res_r = ((r - mean_r)**2) / (std_r**2)
+    res_b = ((b - mean_b)**2) / (std_b**2)
+    res_g = ((g - mean_g)**2) / (std_g**2)
+
+    
+    t_r = cv2.threshold(res_r, threshold**2, 255, cv2.THRESH_BINARY)[1]
+    
+    t_b = cv2.threshold(res_b, threshold**2, 255, cv2.THRESH_BINARY)[1]
+    t_g = cv2.threshold(res_g, threshold**2, 255, cv2.THRESH_BINARY)[1]
+
+
+    print(cv2.bitwise_or(t_r,t_b,t_g))
+
+    return cv2.bitwise_and(t_r,t_b,t_g)
+
 
 if __name__ == "__main__":
     camera = cv2.VideoCapture(0)
@@ -35,19 +49,48 @@ if __name__ == "__main__":
     top, bottom, left, right = 0, height, 0, int(width / 2)
     set_background_period = 30
 
-    background_frames = np.empty([height, int(width / 2), set_background_period])
+    background_frames_b = np.empty([height, int(width / 2), set_background_period])
+    background_frames_g = np.empty([height, int(width / 2), set_background_period])
+
+
+    background_frames_r = np.empty([height, int(width / 2), set_background_period])
+
 
     for i in range(set_background_period):
         ret, frame = camera.read()
         frame = cv2.flip(frame, 1)
+        b,g,r = cv2.split(frame[top:bottom, left:right,:])
+        
+
+        
+    
+
+
         grayscale = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)[top:bottom, left:right]
         grayscale = cv2.GaussianBlur(grayscale, (7,7), 0)
-        background_frames[:,:,i] = grayscale
+        background_frames_r[:,:,i] = r
+        background_frames_g[:,:,i] = g
+        background_frames_b[:,:,i] = b
 
-    mean = np.mean(background_frames, axis=2)
-    std = np.std(background_frames, axis=2)
-    std[std < 0.00001] = 0.00001
-    threshold = 5
+
+    mean_r= np.mean(background_frames_r, axis=2)
+    mean_g = np.mean(background_frames_g, axis=2)
+    mean_b = np.mean(background_frames_b, axis=2)
+    
+    std_r = np.std(background_frames_r, axis=2)
+    std_b = np.std(background_frames_b, axis=2)
+    std_g = np.std(background_frames_g, axis=2)
+    
+
+
+        
+           
+    
+
+    
+   
+    #std[std < 0.00001] = 0.00001
+    threshold = 3
     ff = filter_frame.FilterFrame()
     pong = game_board.Pong(
         h=height,
@@ -58,6 +101,12 @@ if __name__ == "__main__":
         default_half_paddle_height=height//10)
     first = np.array([0, 0])
     second = np.array([0, 0])
+    
+    out = cv2.VideoWriter('output_1.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 10.0, (height,width))    
+    out1 = cv2.VideoWriter('output_2.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 10.0, (height,width))
+
+    
+    
     while True:
         ret, frame = camera.read()
         frame = cv2.flip(frame, 1)
@@ -67,7 +116,11 @@ if __name__ == "__main__":
         grayscale = cv2.cvtColor(player_half, cv2.COLOR_BGR2GRAY)
         grayscale = cv2.GaussianBlur(grayscale, (7,7), 0)
 
-        bg_sub = getMahalanobisImage(grayscale, mean, std, threshold).astype('uint8')
+        b,g,r = cv2.split(frame[top:bottom, left:right,:])
+
+
+
+        bg_sub = getMahalanobisImage(r,b,g, mean_r,mean_b,mean_g, std_r,std_b,std_g, threshold).astype('uint8')
 
         _, contours, _ = cv2.findContours(bg_sub, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         if len(contours) > 0:
@@ -95,10 +148,16 @@ if __name__ == "__main__":
         ended = pong.update(speed)
         pong.draw(frame)
 
+
+        out.write(frame)
+        out1.write(bg_sub)
+        
         cv2.imshow('bg_sub', bg_sub)
         cv2.imshow('frame', frame)
         if cv2.waitKey(1) & 0xFF == ord('q') or ended:
             break
 
+    out.close()
+    out1.close()
     camera.release()
     cv2.destroyAllWindows()
